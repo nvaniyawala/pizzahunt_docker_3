@@ -50,8 +50,8 @@ public class DeliveryBean implements DeliveryBeanLocal {
         } catch (Exception ex) {
             System.out.println("Exception occurred in Delivery Person Allocation");
             ex.printStackTrace();
-            phr.setStatus(200);
-            phr.setMessage("DeliveryPerson Allocating failed");
+            phr.setStatus(405);
+            phr.setMessage("DeliveryPerson Allocation failed."+ ex.getMessage());
             return phr;
         }
     }

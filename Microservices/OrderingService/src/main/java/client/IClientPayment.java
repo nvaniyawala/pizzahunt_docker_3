@@ -19,6 +19,9 @@ import org.eclipse.microprofile.rest.client.inject.RegisterRestClient;
  * @author HP Laptop
  */
 //@RegisterRestClient(baseUri = "http://localhost:8086/PaymentService/rest")
+
+//Running service inside docker container with/without kubernetes
+
 @RegisterRestClient(baseUri = "http://payment:8080/PaymentService/rest")
 
 @Path("/payment")

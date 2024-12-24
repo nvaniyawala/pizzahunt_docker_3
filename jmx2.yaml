@@ -1,0 +1,42 @@
+#Jmx-exporter deployment for pizzahunt
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: jmx-exporter
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: jmx-exporter
+  template:
+    metadata:
+      labels:
+        app: jmx-exporter
+    spec:
+      containers:
+      - name: jmx-exporter
+        securityContext:
+          privileged: true
+        image: sscaling/jmx-prometheus-exporter
+        ports:
+        - containerPort: 5556
+        volumeMounts:
+        - name: config-volume
+          mountPath: /opt/jmx_exporter/config.yml
+          subPath: config.yml  # Use subPath if the file inside config-volume has a different name
+      volumes:
+      - name: config-volume
+        configMap:
+          name: jmx-config  # Name of the ConfigMap
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: jmx-config
+data:
+  config.yml: |
+    ---
+    lowercaseOutputName: true
+    startDelaySeconds: 0
+    ssl: false
+    jmxUrl: service:jmx:rmi:///jndi/rmi://10.1.10.240:5556/jmxrmi

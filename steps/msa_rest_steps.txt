@@ -1,0 +1,33 @@
+new proj->java with maven->project from archetype->type microprofile(search)->select jakartaee8 payara microprofile->give projname->type docker-hub-name(key) and give value (any thing..eg.ur name)
+
+exampleservice.java->edit service->
+
+make xhanges in pom.xml->microprofile dependency->3.2, maven compiler->replace 11 by 1.8(twice)
+
+server->add server->select payra->browse folder
+
+create a client app..same way
+
+sourcepackage->right click->new->java->java interface->give class name and package
+make changes in pom.xml(same as earlier)
+in interface....
+write
+@REgisterRestClient(baseUri="http://localjost:8080.....")
+public interface msaclient
+
+paste prototype of rest method
+eg:
+@get
+@produces(...)
+public string get(..)
+
+
+source pkg(in client)->right click->new->servlet
+
+in servlet
+
+public class ....extends..
+here msaclient is client app where interface is defined
+@inject @RestClient MSAClient cl;
+
+can call rest by -> cl.get();// in servlet

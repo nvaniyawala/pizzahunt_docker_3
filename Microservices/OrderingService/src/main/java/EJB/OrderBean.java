@@ -25,14 +25,13 @@ import org.json.JSONArray;
 import org.json.JSONObject;
 import utilities.Enums.OrderStatus;
 
-/**
- *
- * @author krdmo
- */
+
 @Stateless
 public class OrderBean implements OrderBeanLocal {
 
-    @PersistenceContext(unitName = "orderpu")
+    //@PersistenceContext(unitName = "orderpu")
+        @PersistenceContext(unitName = "ordersyspu")
+
     EntityManager em;
 
     // Add business logic below. (Right-click in editor and choose

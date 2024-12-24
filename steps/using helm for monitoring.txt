@@ -1,0 +1,22 @@
+add reposistory.. he I have named it - "monitor"
+
+helm repo add monitor https://charts.helm.sh/stable
+
+helm repo update
+
+helm install prometheus prometheus-community/kube-prometheus-stack
+
+kubectl get pods
+
+kubectl port-forward -n default prometheus-prometheus-kube-prometheus-prometheus-0 9090
+
+To access prometheus-go to browser and browse- http://localhost:9090
+
+ kubectl port-forward -n default prometheus-grafana-d5679d5d7-zf59m 3000
+
+To access grafana-go to browser and browse- http://localhost:3000
+
+login credentials for grafana
+
+username:admin
+password:prom-operator

@@ -24,6 +24,9 @@ import java.util.List;
 import javax.inject.Inject;
 import javax.json.JsonObject;
 import javax.persistence.PersistenceContext;
+import org.eclipse.microprofile.metrics.annotation.Counted;
+import org.eclipse.microprofile.metrics.annotation.Metered;
+import org.eclipse.microprofile.metrics.annotation.Timed;
 import org.eclipse.microprofile.rest.client.inject.RestClient;
 import utilities.PHResponseType;
 
@@ -40,6 +43,10 @@ public class ManagementBean implements ManagementBeanLocal {
     @Inject
     @RestClient
     IClientCustomer cli;
+    
+    @Inject
+    MetricRegistryManager metricRegistryManager;
+
 
     @Override
     public PHResponseType addItems(JsonObject data) {
@@ -336,18 +343,38 @@ public class ManagementBean implements ManagementBeanLocal {
         return phr;
     }
 
+    @Timed(name = "getAllOutlets.timer",
+        absolute = true,
+        displayName = "getAllOutlets Timer",
+        description = "Time taken by getgetAllOutlets.")
+    
+    @Metered(name = "getOutletsMeter",
+        displayName = "getAllOutlets call frequency",
+        description = "Rate the throughput of getAllOutlets.")
+    
+    @Counted(name = "getAllOutlets",
+        absolute = true,
+        displayName = "getAllOutlets call count",
+        description = "Number of times we retrieved outlets from the database")
+    
     @Override
     public Collection<Outlets> getAllOutlets() {
-        try {
-            Collection<Outlets> outlets = em.createNamedQuery("Outlets.findAll").getResultList();
+       try {
+            Collection<Outlets> outlets = null;
+            outlets = em.createNamedQuery("Outlets.findAll").getResultList();
+            
             return outlets;
         } catch (Exception ex) {
+            metricRegistryManager.increment5xCount();
+            metricRegistryManager.get5xCount();
+            /*metricRegistryManager.get4xCount();*/
             System.out.println("Exception found in GetAllOutlets");
             ex.printStackTrace();
             return null;
         }
     }
 
+    
     @Override
     public Outlets getOutletById(String outletId) {
         try {

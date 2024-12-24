@@ -33,6 +33,10 @@ public class PreprationEJB implements PreprationEJBLocal {
     PreprationClient client;
     @PersistenceContext(unitName = "orderpu")
     EntityManager em;
+    
+     @Inject
+    MetricRegistryManager metricRegistryManager;
+
 
     @Override
     public JsonObject getOrdersByOutletandStatus(String outlet_id, String status) {
@@ -80,8 +84,10 @@ public class PreprationEJB implements PreprationEJBLocal {
             return response;
         } catch (Exception ex) {
             ex.printStackTrace();
-            response.setStatus(405);
-            response.setMessage("failed!!!");
+             metricRegistryManager.increment4xCount();//one of service call failed as it is unavailable
+            metricRegistryManager.get4xCount();
+            response.setStatus(404);
+            response.setMessage("delivery failed!!! "+ ex.getMessage());
             return response;
         }
     }

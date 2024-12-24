@@ -12,6 +12,7 @@ import Entity.UserRoles;
 import Entity.Users;
 import constants.Constants;
 import java.math.BigInteger;
+import java.util.HashSet;
 import java.util.List;
 import java.util.UUID;
 import javax.ejb.Stateless;
@@ -27,7 +28,6 @@ import utilities.*;
 
 /**
  *
- * @author Bhatt Jaimin
  */
 @Stateless
 public class Customer_EJB implements Customer_EJBLocal {
@@ -151,7 +151,9 @@ public class Customer_EJB implements Customer_EJBLocal {
             response.setMessage("Address Updated Successfully!!!");
             return response;
         } catch (Exception ex) {
-            return null;
+            response.setMessage(ex.getMessage());
+            
+            return response;
         }
     }
 

@@ -17,10 +17,12 @@ import org.eclipse.microprofile.rest.client.inject.RegisterRestClient;
  *
  * @author HP Laptop
  */
-//@RegisterRestClient(baseUri = "http://docker_ordering:8080/OrderingService/rest")
-
 //@RegisterRestClient(baseUri = "http://localhost:8085/OrderingService/rest")
+
+//Running service inside docker container with/without kubernetes
+
 @RegisterRestClient(baseUri = "http://ordering:8080/OrderingService/rest")
+
 @Path("/ordering")
 public interface IClientOrder {
 

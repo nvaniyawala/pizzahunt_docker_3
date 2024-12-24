@@ -17,7 +17,9 @@ import utilities.GenerateToken;
  * @author Bhatt Jaimin
  */
 //@RegisterRestClient(baseUri = "http://localhost:8088/DeliveryService/rest/")
-//@RegisterRestClient(baseUri = "http://docker_delivery:8080/DeliveryService/rest/")
+
+//Running service inside docker container with/without kubernetes
+
 @RegisterRestClient(baseUri = "http://delivery:8080/DeliveryService/rest/")
 
 

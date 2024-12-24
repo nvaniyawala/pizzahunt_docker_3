@@ -1,0 +1,128 @@
+using operator for Prometheus monitoring
+
+->  git clone https://github.com/prometheus-operator/kube-prometheus.git
+
+->cd .\kube-prometheus\
+
+->kubectl apply --server-side -f manifests/setup
+
+->kubectl wait --for condition=Established --all CustomResourceDefinition --namespace=monitoring
+
+->kubectl apply -f manifests/
+
+-> kubectl port-forward -n monitoring prometheus-k8s-0 9090
+
+
+==> you should be able to access promethues on localhost:9090 in browser
+
+===>>> To use jmx exporter and apply custom config follow these steps further...
+
+
+-> create jmx_exporter deployment in same namespace where all your java application services are present.This le will allow jmx exporter to scrape jvm metrics from management service running on nodeport 31002
+
+
+#Jmx-exporter deployment for pizzahunt
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: jmx-exporter
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: jmx-exporter
+  template:
+    metadata:
+      labels:
+        app: jmx-exporter
+    spec:
+      containers:
+      - name: jmx-exporter
+        securityContext:
+          privileged: true
+        image: sscaling/jmx-prometheus-exporter
+        ports:
+        - containerPort: 5556
+        volumeMounts:
+        - name: config-volume
+          mountPath: /opt/jmx_exporter/config.yml
+          subPath: config.yml  # Use subPath if the file inside config-volume has a different name
+      volumes:
+      - name: config-volume
+        configMap:
+          name: jmx-config  # Name of the ConfigMap
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: jmx-config
+data:
+  config.yml: |
+    ---
+    lowercaseOutputName: true
+    startDelaySeconds: 0
+    ssl: false
+    jmxUrl: service:jmx:rmi:///jndi/rmi://management:31002/jmxrmi
+
+==>open the file location of this file in terminal and run below command
+kubectl apply -f jmx2.yaml   (here, file name is jmx2.yaml and we r deploying in  default namespace)
+
+==> now create jmx service to access jmx exporter..file name is jmx_service.yaml
+
+apiVersion: v1
+kind: Service
+metadata:
+  name: jmx-exporter-service
+spec:
+  selector:
+    app: jmx-exporter  # Match labels from your Deployment
+  ports:
+    - protocol: TCP
+      port: 5556  # Port on the Service
+      targetPort: 5556  # Port your container listens on
+
+==>kubectl apply -f jmx_service.yaml 
+==> kubectl descrive svc jmx-exporter-service
+
+This will show you the service endpoint. note it down.
+
+
+-> cd N:/Ph.D/REST_OrderDeliverySys-master/kube-promethues
+
+--> create a prometheus-additional.yaml and put below given content in it. add jmx service endpoint noted in above step in target. also add port on which jmx is listening.
+
+- job_name: "prometheus2"
+  scrape_timeout: 30s
+  static_configs:
+  - targets: ["10.1.10.112:5556"]
+  
+Now execute below given command to create secret from prometheus-additional.yaml file.
+
+->kubectl create secret generic additional-scrape-configs --from-file=prometheus-additional.yaml --dry-run=client -o yaml > additional-scrape-configs.yaml
+
+This will create a secret named additional-scrape-configs ....and a yaml file named additional-scrape-configs.yaml in current location.
+
+->kubectl apply -f additional-scrape-configs.yaml -n monitoring 
+
+->Now go to the folder where Prometheus-Prometheus file is present
+
+cd N:/Ph.D/REST_OrderDeliverySys-master/kube-promethues/manifests
+
+->kubectl apply -f prometheus-prometheus.yaml  
+
+NOw do port forwarding and browse Prometheus on localhost:9090 in browser. you should be able to see job=prometheus2 in targets
+
+
+===============================================================================
+
+If you want to edit this additional config make sure you first 1. delete the secret then 2.  delete prometheus-prometheus.yaml then repeat above given steps..
+
+1. kubectl delete secret additional-scrape-configs -n monitoring
+2.cd N:/Ph.D/REST_OrderDeliverySys-master/kube-prometheus/manifests
+
+	->kubectl delete -f prometheus-prometheus.yaml 
+
+
+
+
+

@@ -77,6 +77,15 @@
             <artifactId>common</artifactId>
             <version>${project.version}</version>
         </dependency>
+        
+         <dependency>
+            <groupId>org.eclipse.microprofile.metrics</groupId>
+            <artifactId>microprofile-metrics-api</artifactId>
+            <version>1.0</version>
+            <scope>provided</scope>
+        </dependency>
+        
+        
     </dependencies>
     <build>
         <finalName>ManagementService</finalName>

@@ -1,0 +1,150 @@
+Working with docker mysql and Java web application with payara micro server
+
+Precondition : docker demon and docker client must be installed
+In ubuntu : apt-get install docker-ce
+
+1) mysql 
+
+1. Pull mysql 5.7 image from dockerhhub repository using docker client (Be connected to internet)
+
+	# docker pull mysql/mysql-server:5.7
+
+mysql/mysql-server:5.7 is public repository on docker hub
+
+2. Run the image with name database
+
+	# docker run  -p 3406:3306 --name=database -d  mysql/mysql-server:5.7
+
+p is presented 3406 is port exposed to host machine and 3306 is port opened in the container. database is container name, -d stands for daemon start
+
+3. To get default root password you will get the password with GENERATED ROOT PASSWORD label you have to use this password for login with root
+sample view  : [Entrypoint] GENERATED ROOT PASSWORD: umB3xONTem3tycah;irOs[UKwIB
+
+	# docker logs database 2>&1 | grep GENERATED 
+
+4. Now run dockerized mysql on command (use GENERATED password when prompted -- This will run mysql and give you mysql prompt
+
+	# docker exec -it database mysql -uroot -p 
+
+5. To have your own password and data perform following mysql commands
+
+	mysql> ALTER USER 'root'@'localhost' IDENTIFIED BY 'ompandey';
+
+	mysql> GRANT ALL PRIVILEGES ON *.* TO 'root'@'%' identified by 'ompandey' WITH GRANT OPTION;
+
+	mysql> create database test;
+
+	mysql> use test;
+
+	mysql> create table login ( username varchar(100), password varchar(100));
+
+	mysql> insert into login values('kamal','kamal');
+
+	mysql> commit;
+
+	mysql> exit;
+
+-- mysql configured and running on docker now
+
+6. You can stop the instance database (name given while running the image)  by 
+
+	# docker stop database 
+7. You can remove the container instance of mysql as
+
+	# docker rm database
+
+8. To use mysql image again you have to perform the above operations allover again.
+
+
+How to run mysql docker instance with the current host database in the the host system like ubuntu and you want to make use of existing database so that you dont have to recreate all the databases, users and tables
+
+
+1. Your all database folders and files im mysql are stored in /var/lib/mysql by default. Just copy the database  folders which you want in the dockerized mysql container and put thos folders in any folder say /var/data
+
+	# docker run --name=database --network mynet -p 3406:3306 -v /var/data:/var/lib/mysql -d  mysql/mysql-server:5.7 
+
+### example--> docker run --name=docker_pizza_db -p 3406:3306 --network pizza_app_network -v pizza_app_db_volume:/var/lib/mysql -d pizza_app_db_image
+	#docker exec -it mydb mysql -u root -p
+
+This will run your container with user names,  and tables. You have to give privileges to other apps outside the container if you want them to connect
+
+2. One more simple way is just create a backup dump of the databases which you want to use using workbench or other tools with extention of .sql. In this case you have to alter  password , create database and give privileges before you give following commands while starting mysql prompt
+
+	# docker exec -it database mysql -uroot -pompandey test < /root/mydata.sql
+	
+
+	# docker exec -it database mysql -uroot -pompandey
+	
+	
+	
+==================  end ==============================	
+	
+	
+	
+
+============  To create image with database ========================
+
+1. Take the backup of your data and name the file as mydata.sql or anything you like.
+2. Write one more file for grants as 
+
+GRANT ALL PRIVILEGES ON *.* TO 'root'@'%' identified by 'ompandey' WITH GRANT OPTION;
+
+and save it as grant.sql
+3. create a folder mysqldata and put both the files mydata.sql and grant.sql in that folder
+4. create Dockerfile in the same folder and the content of the docker file will be 
+#===================================================
+# Derived from official mysql image (our base image)
+FROM mysql/mysql-server:5.7
+# Add a database
+ENV MYSQL_DATABASE test
+ENV MYSQL_ROOT_PASSWORD ompandey
+# Add the content of the sql-scripts/ directory to your image
+# All scripts in docker-entrypoint-initdb.d/ are automatically
+# executed during container startup
+COPY mydata.sql /docker-entrypoint-initdb.d/
+ADD grant.sql /docker-entrypoint-initdb.d
+#===================================================
+
+In the above content the name of the database is test and the password is ompandey. You have to write the name of your database and password
+
+5. Go to terminal. Navigate to mysqldata directory and create the image by following command
+
+docker build -t order_sys_delivery_image .
+
+The name of image is order_sys_delivery_image:latest
+
+6. use this image to run and execute as
+
+docker run  -p 3406:3306 --name=mydb -d  mysqlwithdata
+
+(use below listed command if you want to run db on network
+
+-->docker run --name=docker_order_delivery_sys -p 3406:3306 --network msa_net -v /var/data:/var/lib/mysql -d order_sys_delivery_image
+
+and 
+
+docker exec -it mydb mysql -u root -p
+
+It will ask the password. use password you mentioned in the dockerfile
+
+Now you can see all your databases and tables;
+
+
+7. Pushing the image on docker hub
+
+a) docker tag mysqlwithdata kamlendupandey/mysqlwithdata:latest
+
+b) docker push kamlendupandey/mysqlwithdata:latest
+
+8. This image is now ready to be pulled by the docker users using its login and password.
+The image is protected and can be accessed by the who has pushed it on docker.
+
+To make the image one has to get the premier account and request docker to make it available for public usage.
+
+
+	
+
+***** MYSQL DOCKER CONFIG OVER ********
+
+
+

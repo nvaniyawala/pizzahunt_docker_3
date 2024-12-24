@@ -1,0 +1,111 @@
+1) create docker network
+docker network create msa_net
+
+2.Plan your deployment . decide the names of your containers and port which will be exposed to host
+
+The name of the containers in this case are 
+
+Application		   container-name		hostport:conainerport
+mysql database		docker_order_delivery_sys	3406:3306
+Msa_rest		docker_msa_rest			9050:8080
+Msa_client		docker_msa_client		9060:8080
+
+3. MySQL image building
+
+============  To create image with database ========================
+
+1. Take the backup of your data and name the file as mydata.sql or anything you like.
+2. Write one more file for grants as 
+
+GRANT ALL PRIVILEGES ON *.* TO 'root'@'%' identified by 'root' WITH GRANT OPTION;
+
+and save it as grant.sql
+
+3. create a folder mysqldata and put both the files mydata.sql and grant.sql in that folder
+4. create Dockerfile in the same folder and the content of the docker file will be 
+#===================================================
+# Derived from official mysql image (our base image)
+FROM mysql/mysql-server:latest
+# Add a database
+ENV MYSQL_DATABASE order_delivery_sys
+ENV MYSQL_ROOT_PASSWORD root
+# Add the content of the sql-scripts/ directory to your image
+# All scripts in docker-entrypoint-initdb.d/ are automatically
+# executed during container startup
+COPY mydata.sql /docker-entrypoint-initdb.d/
+ADD grant.sql /docker-entrypoint-initdb.d
+#===================================================
+
+In the above content the name of the database is order_delivery_sys and the password is root. You have to write the name of your database and password
+
+5. Go to terminal. Navigate to mysqldata directory and create the image by following command
+
+docker build -t order_sys_delivery_image .
+
+============  mysql image with database is created ========================
+
+4. use this db image to run and execute as
+
+docker run --name=docker_order_delivery_sys -p 3406:3306 --network msa_net -v /var/data:/var/lib/mysql -d order_sys_delivery_image
+
+and 
+
+docker exec -it docker_order_delivery_sys mysql -uroot -proot
+
+Now you can see all your databases and tables;
+--> use order_delivery_sys;
+here order_delivery_sys is db name.
+
+select * from users;
+
+this will print all records from users table.
+
+5. Now build the image of msa_rest using the Dockerfile placed in msa_rest folder of the application. The war file is placed in artefact folder of msa_rest
+
+The sample Docker file is given as under
+++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+FROM ivonet/payara-micro:latest
+
+USER root
+
+# create a custom config folder
+RUN mkdir ${PAYARA_HOME}/config
+
+# copy domain1.xml into config to read your data sources and jndi
+COPY domain1.xml ${PAYARA_HOME}/config/
+
+# copy mysql pure java driver into config directory
+COPY mysql-connector-java-8.0.28.jar ${PAYARA_HOME}/config
+
+RUN chown -R payara:payara ${PAYARA_HOME}/config
+
+USER payara
+
+WORKDIR ${PAYARA_HOME}
+
+# Deploy artefacts
+# copy your war file into deploy directory of payara
+
+
+COPY ./artifact/msa_rest.war $DEPLOY_DIR
+
+CMD ["--addLibs","/opt/payara/config/mysql-connector-java-8.0.28.jar", "--deploymentDir", "/opt/payara/deployments", "--rootDir", "/opt/payara/config","--domainConfig", "/opt/payara/config/domain1.xml"]]
+
+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+This docker file copies mysql-connector-java-8.0.28.jar (mysql driver) and domain1.xml (xml in which jndi for my database is configured)  placed in the folder where Dockerfile is placed.
+
+6. Open terminal from forder where you have placed dockerfile, mysql-connector-java-8.0.28.jar and domain1.xml i.e you project folder.
+
+Buid the image
+
+	# docker build -t msa_rest_img .
+
+7. create container and run
+
+docker run   --name=docker_msa_rest -p 9050:8080 --network msa_net -d msa_rest_img
+
+
+
+
+

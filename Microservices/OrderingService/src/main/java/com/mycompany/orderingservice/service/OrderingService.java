@@ -71,10 +71,11 @@ public class OrderingService {
     @Path("/addOrder")
     public Response addOrder(@RequestBody JsonObject json) {
         PHResponseType phr = bb.addOrder(json);
-        if (phr!=null) {
+        if (phr.getStatus()== 200) {
             return Response.status(200).entity(phr).build();
         } else {
-            return Response.status(405, "Failed to Create Order").build();
+            
+            return Response.status(phr.getStatus(), "Failed to Create Order. "+phr.getMessage()).build();
         }
     }
      @GET
